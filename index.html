@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Review SPA</title>
+    <!-- Import Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="view active">
+        <div class="container dashboard-container">
+            <div class="dashboard-header">
+                <h1>My Library</h1>
+                <div class="dashboard-actions">
+                    <button id="import-btn" class="nav-btn" title="Import Data from Another Device">Import</button>
+                    <button id="export-btn" class="nav-btn" title="Export Data to Save">Export</button>
+                    <button id="create-new-btn" class="primary-btn">+ Add Set</button>
+                    <input type="file" id="import-file-input" style="display: none;" accept=".json">
+                </div>
+            </div>
+            <p class="subtitle">Select a previously saved set to study, or create a new one.</p>
+            
+            <div id="sets-grid" class="sets-grid">
+                <!-- Cards will be injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Input View -->
+    <div id="input-view" class="view">
+        <div class="container input-container">
+            <h1>New Set</h1>
+            <input type="text" id="set-name-input" class="set-name-input" placeholder="Set Name (e.g., Chapter 1 Test)" autocomplete="off">
+            <p>Paste your questions below. Separate each question with <code>###</code>. Put a <code>*</code> before the correct option.</p>
+            <textarea id="questions-input" placeholder="What is the capital of France?&#10;A) Berlin&#10;B) Madrid&#10;*C) Paris&#10;D) Rome&#10;###&#10;Which planet is known as the Red Planet?&#10;A) Earth&#10;*B) Mars&#10;C) Jupiter&#10;D) Saturn"></textarea>
+            <div class="input-actions">
+                <button id="cancel-create-btn" class="nav-btn">Cancel</button>
+                <button id="save-set-btn" class="primary-btn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review View -->
+    <div id="review-view" class="view">
+        <div class="container review-container">
+            <div class="header">
+                <span id="progress-indicator">Question 0 of 0</span>
+                <button id="back-to-library-btn" class="text-btn">Back to Library</button>
+            </div>
+            
+            <div id="question-display" class="question-text">
+                <!-- Question text appears here -->
+            </div>
+
+            <div id="options-container" class="options-container">
+                <!-- Option buttons appear here -->
+            </div>
+
+            <div id="translation-block" class="translation-block hidden" dir="rtl">
+                <!-- Sentence translation appears here -->
+            </div>
+
+            <div class="controls">
+                <button id="prev-btn" class="nav-btn" style="display: none;">Previous</button>
+                <button id="translate-btn" class="primary-btn">Translate</button>
+                <button id="next-btn" class="nav-btn" style="display: none;">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
