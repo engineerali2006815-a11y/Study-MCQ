@@ -56,6 +56,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event Listeners
     createNewBtn.addEventListener('click', () => {
+        const password = prompt("الرجاء إدخال الرمز السري لإضافة مجموعة جديدة:");
+        if (password !== "20051212") {
+            if (password !== null) {
+                alert("الرمز السري غير صحيح.");
+            }
+            return;
+        }
         setNameInput.value = '';
         questionsInput.value = '';
         switchView(dashboardView, inputView);
@@ -80,7 +87,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Import / Export
     exportBtn.addEventListener('click', handleExport);
-    importBtn.addEventListener('click', () => importFileInput.click());
+    importBtn.addEventListener('click', () => {
+        const password = prompt("الرجاء إدخال الرمز السري لاستيراد المجموعات:");
+        if (password !== "20051212") {
+            if (password !== null) {
+                alert("الرمز السري غير صحيح.");
+            }
+            return;
+        }
+        importFileInput.click();
+    });
     importFileInput.addEventListener('change', handleImport);
 
     // Functions
@@ -139,6 +155,13 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteBtn.onclick = async (e) => {
                 e.stopPropagation(); // prevent card click
                 if (confirm(`Are you sure you want to delete "${set.name}"?`)) {
+                    const password = prompt("الرجاء إدخال الرمز السري لتأكيد الحذف:");
+                    if (password !== "20051212") {
+                        if (password !== null) {
+                            alert("الرمز السري غير صحيح.");
+                        }
+                        return;
+                    }
                     const originalText = deleteBtn.innerHTML;
                     deleteBtn.innerHTML = 'Deleting...';
                     deleteBtn.disabled = true;
