@@ -36,8 +36,12 @@
         <div class="container input-container">
             <h1>New Set</h1>
             <input type="text" id="set-name-input" class="set-name-input" placeholder="Set Name (e.g., Chapter 1 Test)" autocomplete="off">
-            <p>Paste your questions below. Separate each question with <code>###</code>. Put a <code>*</code> before the correct option.</p>
-            <textarea id="questions-input" placeholder="What is the capital of France?&#10;A) Berlin&#10;B) Madrid&#10;*C) Paris&#10;D) Rome&#10;###&#10;Which planet is known as the Red Planet?&#10;A) Earth&#10;*B) Mars&#10;C) Jupiter&#10;D) Saturn"></textarea>
+            
+            <div id="questions-builder-container" class="builder-container">
+                <!-- Question cards will be injected by JS here -->
+            </div>
+            
+            <button id="add-question-btn" class="nav-btn add-q-btn">+ Add Another Question</button>
             <div class="input-actions">
                 <button id="cancel-create-btn" class="nav-btn">Cancel</button>
                 <button id="save-set-btn" class="primary-btn">Save</button>
@@ -63,6 +67,11 @@
 
             <div id="translation-block" class="translation-block hidden" dir="rtl">
                 <!-- Sentence translation appears here -->
+            </div>
+
+            <div id="solution-block" class="solution-block hidden">
+                <div class="solution-header">Solution</div>
+                <img id="solution-image" src="" alt="Solution Image" class="solution-img" style="display: none;">
             </div>
 
             <div class="controls">
