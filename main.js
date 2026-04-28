@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -13,9 +12,9 @@ const firebaseConfig = {
     measurementId: "G-F6DN1QWCDV"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements - Views
@@ -32,8 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM Elements - Input
     const setNameInput = document.getElementById('set-name-input');
-    const builderContainer = document.getElementById('questions-builder-container');
-    const addQuestionBtn = document.getElementById('add-question-btn');
+    const questionsInput = document.getElementById('questions-input');
     const saveSetBtn = document.getElementById('save-set-btn');
     const cancelCreateBtn = document.getElementById('cancel-create-btn');
 
@@ -43,8 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const questionDisplay = document.getElementById('question-display');
     const optionsContainer = document.getElementById('options-container');
     const translationBlock = document.getElementById('translation-block');
-    const solutionBlock = document.getElementById('solution-block');
-    const solutionImage = document.getElementById('solution-image');
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
     const translateBtn = document.getElementById('translate-btn');
@@ -68,8 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         setNameInput.value = '';
-        builderContainer.innerHTML = '';
-        addBuilderQuestionCard();
+        questionsInput.value = '';
         switchView(dashboardView, inputView);
     });
 
@@ -77,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
         switchView(inputView, dashboardView);
     });
 
-    addQuestionBtn.addEventListener('click', addBuilderQuestionCard);
     saveSetBtn.addEventListener('click', handleSaveSet);
 
     backToLibraryBtn.addEventListener('click', () => {
@@ -106,53 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
     importFileInput.addEventListener('change', handleImport);
 
     // Functions
-    let questionCounter = 0;
-
-    function addBuilderQuestionCard() {
-        questionCounter++;
-        const cardId = `q-${Date.now()}-${questionCounter}`;
-        
-        const card = document.createElement('div');
-        card.className = 'builder-card';
-        card.id = cardId;
-        
-        card.innerHTML = `
-            <div class="builder-header">
-                <h3>Question</h3>
-                <button type="button" class="builder-delete-btn" onclick="document.getElementById('${cardId}').remove()">🗑 Delete</button>
-            </div>
-            <textarea class="builder-textarea name-q-text" placeholder="Type your question here..."></textarea>
-            
-            <div class="builder-options">
-                <div class="builder-option-row">
-                    <input type="radio" name="correct-${cardId}" value="0" checked>
-                    <input type="text" class="builder-input opt-input" placeholder="Option A">
-                </div>
-                <div class="builder-option-row">
-                    <input type="radio" name="correct-${cardId}" value="1">
-                    <input type="text" class="builder-input opt-input" placeholder="Option B">
-                </div>
-                <div class="builder-option-row">
-                    <input type="radio" name="correct-${cardId}" value="2">
-                    <input type="text" class="builder-input opt-input" placeholder="Option C">
-                </div>
-                <div class="builder-option-row">
-                    <input type="radio" name="correct-${cardId}" value="3">
-                    <input type="text" class="builder-input opt-input" placeholder="Option D">
-                </div>
-            </div>
-
-            <div class="builder-upload-area">
-                <label>Solution Image (Optional, WebP recommended):</label>
-                <input type="file" class="solution-img-input" accept="image/webp,image/png,image/jpeg">
-            </div>
-        `;
-        
-        builderContainer.appendChild(card);
-        // Scroll to the new card
-        builderContainer.scrollTop = builderContainer.scrollHeight;
-    }
-
     function switchView(hideView, showView) {
         hideView.style.opacity = 0;
         setTimeout(() => {
@@ -246,91 +193,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleSaveSet() {
         const setName = setNameInput.value.trim();
-        
+        const rawText = questionsInput.value.trim();
+
         if (!setName) {
             alert('Please enter a name for this set.');
             return;
         }
-
-        const cards = builderContainer.querySelectorAll('.builder-card');
-        if (cards.length === 0) {
-            alert('Please add at least one question.');
+        if (!rawText) {
+            alert('Please enter some questions.');
             return;
         }
 
-        saveSetBtn.disabled = true;
-        saveSetBtn.textContent = 'Saving & Uploading...';
+        const blocks = rawText.split('###').map(q => q.trim()).filter(q => q.length > 0);
+        const parsedQuestions = blocks.map(block => {
+            const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const questionText = lines[0] || 'Unknown Question';
+            const options = [];
+            let correctAnswerIndex = -1;
 
-        const parsedQuestions = [];
+            for (let i = 1; i < lines.length; i++) {
+                let optText = lines[i];
+                if (optText.startsWith('*')) {
+                    correctAnswerIndex = i - 1;
+                    optText = optText.substring(1).trim();
+                }
+                options.push(optText);
+            }
+
+            if (correctAnswerIndex === -1 && options.length > 0) correctAnswerIndex = 0;
+
+            return {
+                questionText,
+                options,
+                correctAnswerIndex,
+                fullText: questionText + '\n' + options.join('\n')
+            };
+        });
+
+        if (parsedQuestions.length === 0) {
+            alert('No valid questions found.');
+            return;
+        }
+
+        const newSet = {
+            name: setName,
+            questions: parsedQuestions
+        };
+
+        saveSetBtn.disabled = true;
+        saveSetBtn.textContent = 'Saving...';
 
         try {
-            for (let i = 0; i < cards.length; i++) {
-                const card = cards[i];
-                const qText = card.querySelector('.name-q-text').value.trim();
-                const optInputs = card.querySelectorAll('.opt-input');
-                const radioBtns = card.querySelectorAll('input[type="radio"]');
-                const fileInput = card.querySelector('.solution-img-input');
-                
-                if (!qText) continue; // Skip empty questions
-
-                const options = [];
-                let correctAnswerIndex = 0;
-                
-                optInputs.forEach((opt, index) => {
-                    if (opt.value.trim() !== '') {
-                        options.push(opt.value.trim());
-                        // If this radio is checked, its actual index in the options array is options.length - 1
-                        if (radioBtns[index].checked) {
-                            correctAnswerIndex = options.length - 1;
-                        }
-                    }
-                });
-
-                if (options.length === 0) continue; // Skip if no options
-
-                let solutionImageUrl = null;
-                const file = fileInput.files[0];
-                if (file) {
-                    const storageRef = ref(storage, `solutions/${Date.now()}_${file.name}`);
-                    solutionImageUrl = await new Promise((resolve, reject) => {
-                        const uploadTask = uploadBytesResumable(storageRef, file);
-                        uploadTask.on('state_changed', 
-                            (snapshot) => {
-                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                                saveSetBtn.textContent = `Upload Q${i+1} (${Math.round(progress)}%)`;
-                            }, 
-                            (error) => {
-                                reject(error);
-                            }, 
-                            async () => {
-                                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                                resolve(downloadURL);
-                            }
-                        );
-                    });
-                }
-
-                parsedQuestions.push({
-                    questionText: qText,
-                    options: options,
-                    correctAnswerIndex: correctAnswerIndex,
-                    fullText: qText + '\n' + options.join('\n'),
-                    solutionImage: solutionImageUrl
-                });
-            }
-
-            if (parsedQuestions.length === 0) {
-                alert('No valid questions found. Please fill in the details.');
-                saveSetBtn.disabled = false;
-                saveSetBtn.textContent = 'Save';
-                return;
-            }
-
-            const newSet = {
-                name: setName,
-                questions: parsedQuestions
-            };
-
             const docRef = await addDoc(collection(db, "studySets"), newSet);
             newSet.firestoreId = docRef.id;
             savedSets.push(newSet);
@@ -338,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
             switchView(inputView, dashboardView);
         } catch (error) {
             console.error("Error saving document:", error);
-            alert("Failed to save to Firestore or Upload Image.");
+            alert("Failed to save to Firestore. Check configuration.");
         } finally {
             saveSetBtn.disabled = false;
             saveSetBtn.textContent = 'Save';
@@ -399,13 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             currentQuestions.push(currentQ);
                             progressIndicator.textContent = `Question ${currentIndex + 1} of ${currentQuestions.length}`;
                         }
-                        
-                        // Show Solution if it exists
-                        if (currentQ.solutionImage) {
-                            solutionImage.src = currentQ.solutionImage;
-                            solutionImage.style.display = 'block';
-                            solutionBlock.classList.remove('hidden');
-                        }
 
                         Array.from(optionsContainer.children).forEach(child => {
                             child.disabled = true;
@@ -418,11 +324,6 @@ document.addEventListener('DOMContentLoaded', () => {
             translationBlock.classList.add('hidden');
             translationBlock.innerHTML = '';
             translateBtn.textContent = 'Translate';
-            
-            solutionBlock.classList.add('hidden');
-            solutionImage.style.display = 'none';
-            solutionImage.src = '';
-            
             nextBtn.style.display = 'none';
 
             questionDisplay.style.opacity = 1;
